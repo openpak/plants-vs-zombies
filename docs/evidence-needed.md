@@ -18,7 +18,7 @@ resolution paths and is dead unless the variable is set. Note that it matches th
 `.ea.com` suffix**, not one exact hostname — which is itself evidence that nobody has yet
 observed which EA hosts this title actually resolves. Step 1 fixes that.
 
-The two shared personas and launch scripts (`shared-docs/scripts/launch-citron-{host,joiner}.sh`)
+The two shared personas and launch scripts (workspace `tools/launch-citron-{host,joiner}.sh`)
 work here unchanged; see `Openpak/servers/outbound/docs/citron-isolation.md` for the protocol.
 
 ## Step 1 — Which EA hosts does the Switch build resolve, in what order?
