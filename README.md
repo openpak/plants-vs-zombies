@@ -41,7 +41,7 @@ What would overturn it, and how to find out: [`docs/evidence-needed.md`](docs/ev
 
 ## Ground rules
 
-- Clean room. See [`docs/clean-room-policy.md`](../../docs/clean-room-policy.md). No earlier
+- Clean room. See [`docs/clean-room-policy.md`](https://github.com/openpak/docs/blob/main/clean-room-policy.md). No earlier
   tree was opened to produce anything in this repository. Public documentation, our own
   captures, and compatibly licensed code are the only inputs.
 - AGPL-3.0-only, English only, Go 1.25 when there is Go, no secrets and no raw captures in the
