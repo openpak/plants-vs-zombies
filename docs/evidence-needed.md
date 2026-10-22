@@ -100,7 +100,7 @@ the Switch build actually uses; a BfN-era title is unlikely to need most of the 
 
 ## What would *not* count as evidence
 
-- Anything read out of a `*-legacy` tree. If a step feels blocked without one, it needs a
+- Anything read out of an earlier server's source tree. If a step feels blocked without one, it needs a
   capture instead — that is the whole point of this list.
 - PC captures. BfN's PC build authenticates differently and has a store/EA-app path the console
   does not; a PC capture would tell us about a different client.
