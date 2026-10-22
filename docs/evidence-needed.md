@@ -11,10 +11,10 @@ as text.
 
 ## Tooling that already exists
 
-`Openpak/emulators/citron` already carries a DNS redirect hook for this title:
-`GetPvzEaRedirectIp` in `src/core/hle/service/sockets/sfdnsres.cpp`, gated by
-`OPENPAK_PVZ_EA_IP` (the emulator fork's existing env prefix). It is wired into both
-resolution paths and is dead unless the variable is set. Note that it matches the **whole
+The retired Citron fork carried a DNS redirect hook for this title:
+`GetPvzEaRedirectIp` in `src/core/hle/service/sockets/sfdnsres.cpp`, gated by an env
+variable that nothing reads any more. It was wired into both
+resolution paths and was dead unless the variable was set. Note that it matched the **whole
 `.ea.com` suffix**, not one exact hostname — which is itself evidence that nobody has yet
 observed which EA hosts this title actually resolves. Step 1 fixes that.
 
@@ -27,8 +27,7 @@ retired 2026-09-26; see
 **Answers:** whether BfN uses Blaze at all on Switch, and what the redirector host and
 environment are. Without this every later step is guesswork.
 
-Run BfN in citron with `OPENPAK_PVZ_EA_IP` **unset** and read the resolver log — the hook logs
-nothing when disabled, so instead add a one-line log of every resolved host, or take the list
+Run BfN in Harbor with no EA redirect and read the resolver log — there is no hook log, so instead add a one-line log of every resolved host, or take the list
 from a `tcpdump -n port 53` on the host while the game boots to its main menu and then attempts
 "Play Online".
 
@@ -47,7 +46,7 @@ the whole premise of this repository is wrong and the design must be rewritten.
 **Answers:** whether a DNS redirect is enough, or whether a MITM also needs a CA trust patch
 (hardware) / a trusted stub cert (emulator).
 
-Point `OPENPAK_PVZ_EA_IP` at a local TLS stub that presents a self-signed certificate for the
+Redirect the Step 1 hostname to a local TLS stub that presents a self-signed certificate for the
 Step 1 hostname and logs the ClientHello. Record: SNI, offered cipher suites, ALPN, and whether
 the console proceeds or sends an alert. A `ProtoHttp %d.%d/DS %d.%d.%d.%d` User-Agent in any
 cleartext HTTP would confirm EA's DirtySock stack and pin the SDK version.
