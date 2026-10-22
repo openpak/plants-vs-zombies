@@ -4,7 +4,7 @@
 is the list that confirms or kills that verdict, cheapest and most decisive first. Stop at the
 first step that settles it — steps 4 onward only matter if step 3 comes back positive.
 
-Everything here is an observation of what the console or the emulator does. No earlier tree,
+Everything here is an observation of what the console or the emulator does. No source from a non-free implementation,
 no EA server code, no game binaries in the repository. Captures stay off-repo, on the pool
 (`/mnt/media/research/`), per the clean-room policy; only decoded findings come back
 as text.
