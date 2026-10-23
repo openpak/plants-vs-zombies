@@ -32,7 +32,7 @@ What would overturn it, and how to find out: [`docs/evidence-needed.md`](docs/ev
 ## Consequences
 
 - **No port block claimed.** The 22600–22699 third-party-network range in
-  [`ports.md`](../../ports.md) stays free for a title that can use it.
+  [`ports.md`](https://docs.openpak.org/contributors/ports/) stays free for a title that can use it.
 - **No Go module.** `go.mod` was removed; an empty module only ever produced a failing
   `go test ./...`. It comes back with the first real package.
 - **One question decides everything.** If a capture ever shows the console hosting its own
@@ -41,7 +41,7 @@ What would overturn it, and how to find out: [`docs/evidence-needed.md`](docs/ev
 
 ## Ground rules
 
-- Clean room. See [`docs/clean-room-policy.md`](https://github.com/openpak/docs/blob/main/clean-room-policy.md). No source from
+- Clean room. See [clean-room policy](https://docs.openpak.org/contributors/clean-room/). No source from
   a non-free implementation was opened to produce anything in this repository. Public documentation, our own
   captures, and compatibly licensed code are the only inputs.
 - AGPL-3.0-only, English only, Go 1.25 when there is Go, no secrets and no raw captures in the

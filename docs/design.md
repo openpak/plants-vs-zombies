@@ -2,7 +2,7 @@
 
 Status: **research only. Verdict is "not feasible now."** No code, no port block.
 Written 2026-09-09 against public sources only, under
-[`docs/clean-room-policy.md`](https://github.com/openpak/docs/blob/main/clean-room-policy.md). No source from a non-free implementation
+[clean-room policy](https://docs.openpak.org/contributors/clean-room/). No source from a non-free implementation
 was opened for this document.
 
 ## 1. Which title
@@ -117,7 +117,7 @@ orders them so the cheapest kill shot comes first.
 ## 6. Scope decision
 
 Documentation only. No Go module, no port block claimed in
-[`ports.md`](../../../ports.md), no skeleton. The 22600-block allocation stays free for a
+[`ports.md`](https://docs.openpak.org/contributors/ports/), no skeleton. The 22600-block allocation stays free for a
 third-party-network title that can actually use it.
 
 Revisit when either §5 question comes back positive, or when someone demonstrates a

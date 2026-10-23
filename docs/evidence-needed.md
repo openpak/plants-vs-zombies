@@ -28,7 +28,7 @@ observed which EA hosts this title actually resolves. Step 1 fixes that.
 
 Launch the fork directly — the shared host/joiner personas and their launch scripts were
 retired 2026-09-26; see
-<https://github.com/openpak/docs/blob/main/playbooks/online-compatibility-playbook.md> §0.
+<https://docs.openpak.org/contributors/online-compatibility/> §0.
 
 ## Step 1 — Which EA hosts does the Switch build resolve, in what order?
 
