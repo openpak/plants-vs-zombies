@@ -59,6 +59,9 @@ func init() {
 	}
 }
 
+// Set from the server config at start (main), used in the BlazeSDK config section.
+var blazeHostForConfig, blazePortForConfig = "spring18.gosredirector.ea.com", "42230"
+
 func utilFetchClientConfig(s *session, req h.Struct) (h.Struct, uint32) {
 	return h.Struct{h.F("CONF", h.StrMap(clientConfig(req.Str("CFID"))))}, 0
 }
@@ -67,9 +70,25 @@ func utilFetchClientConfig(s *session, req h.Struct) (h.Struct, uint32) {
 // "use defaults".
 func clientConfig(section string) map[string]string {
 	switch section {
+	case "IdentityParams":
+		// Extra query parameters the SDK's console login appends, one "&key=value" per entry, to
+		// <nucleusConnect>/connect/auth?response_type=code.
+		return map[string]string{
+			"redirect_uri": "https://" + blazeHostForConfig + ":" + blazePortForConfig + "/success",
+			"display":      "console2/welcome",
+		}
 	case "", "BlazeSDK":
 		return map[string]string{
-			"pingPeriod":            "15s",
+			"pingPeriod": "15s",
+			// Where the console login finds Nucleus.
+			"nucleusConnect":        "https://accounts.ea.com",
+			"nucleusConnectTrusted": "https://accounts.ea.com",
+			"nucleusProxy":          "https://gateway.ea.com",
+			"nucleusPortal":         "https://signin.ea.com",
+			// The ByteVault component lives on its own connection; it is this server too.
+			"bytevaultHostname":     blazeHostForConfig,
+			"bytevaultPort":         blazePortForConfig,
+			"bytevaultSecure":       "true",
 			"connIdleTimeout":       "90s",
 			"defaultRequestTimeout": "60s",
 		}
@@ -100,7 +119,7 @@ func utilPreAuth(s *session, req h.Struct) (h.Struct, uint32) {
 			h.F("CQFR", h.Time(30_000_000)),
 			h.F("CQRR", h.Time(300_000_000)),
 			h.F("LTPS", h.Map(h.TString, h.TStruct)),
-			h.F("QCNF", h.St(h.F("DPSP", h.I(0)), h.F("QCA", h.S("")), h.F("QCP", h.I(0)), h.F("QPR", h.S("")))),
+			h.F("QCNF", h.St(h.F("DPSP", h.I(17502)), h.F("QCA", h.S(s.srv.cfg.blazeHost)), h.F("QCP", h.I(17502)), h.F("QPR", h.S("pvz_nx_profile")))),
 			h.F("SQRR", h.Time(300_000_000)),
 		)),
 		h.F("RSRC", h.S("303107")),

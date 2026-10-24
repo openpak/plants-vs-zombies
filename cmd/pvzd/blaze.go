@@ -60,7 +60,9 @@ func (s *server) serveBlaze(c net.Conn) {
 		c.SetReadDeadline(time.Now().Add(5 * time.Minute))
 		f, err := fire2.Read(c)
 		if err != nil {
-			if err != io.EOF {
+			if err == io.EOF {
+				log.Printf("blaze %d: peer closed", sess.id)
+			} else {
 				log.Printf("blaze %d: read: %v", sess.id, err)
 			}
 			return

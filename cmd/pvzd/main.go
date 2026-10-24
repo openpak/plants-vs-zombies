@@ -73,6 +73,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("store: %v", err)
 	}
+	blazeHostForConfig, blazePortForConfig = cfg.blazeHost, strconv.Itoa(cfg.blazePort)
 	srv := &server{cfg: cfg, store: st, ids: newIdentityClient(cfg.nxURL, cfg.nxKey)}
 	cert, err := tls.LoadX509KeyPair(cfg.certFile, cfg.keyFile)
 	if err != nil {
@@ -128,7 +129,7 @@ func (s *server) serveTLS(ln net.Listener, tcfg *tls.Config, h http.Handler) {
 			tc := tls.Server(c, tcfg)
 			tc.SetDeadline(time.Now().Add(30 * time.Second))
 			if err := tc.Handshake(); err != nil {
-				log.Printf("%s: tls handshake: %v", c.RemoteAddr(), err)
+				log.Printf("%s -> %s: tls handshake: %v", c.RemoteAddr(), origDst(c), err)
 				c.Close()
 				return
 			}
@@ -140,6 +141,9 @@ func (s *server) serveTLS(ln net.Listener, tcfg *tls.Config, h http.Handler) {
 			}
 			tc.SetDeadline(time.Time{})
 			pc := &peekedConn{Conn: tc, r: br}
+			if s.cfg.trace {
+				log.Printf("%s -> %s: tls %s first=%q", c.RemoteAddr(), origDst(c), tc.ConnectionState().ServerName, head)
+			}
 			if isHTTP(head) {
 				httpLn.ch <- pc
 				return
