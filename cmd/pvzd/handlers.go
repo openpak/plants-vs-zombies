@@ -74,7 +74,7 @@ func clientConfig(section string) map[string]string {
 		// Extra query parameters the SDK's console login appends, one "&key=value" per entry, to
 		// <nucleusConnect>/connect/auth?response_type=code.
 		return map[string]string{
-			"redirect_uri": "https://" + blazeHostForConfig + ":" + blazePortForConfig + "/success",
+			"redirect_uri": "http://127.0.0.1/success",
 			"display":      "console2/welcome",
 		}
 	case "", "BlazeSDK":
