@@ -122,3 +122,46 @@ third-party-network title that can actually use it.
 
 Revisit when either §5 question comes back positive, or when someone demonstrates a
 console-side host path for a Frostbite title on Switch.
+
+## 7. Client RE update, 2026-10-24 — the verdict is refined, not reversed
+
+A read of the game client's own symbol table and strings (owner's dump, title
+`0100C56010FD8000`, update v262144 / v1.0.4; clean-room, no server source opened) sharpens
+every claim above. Two findings matter.
+
+**A. The "no peer-hosted fallback on console" claim overstates what the binary does.**
+The Switch build carries all three network topologies — `CLIENT_SERVER_DEDICATED`,
+`CLIENT_SERVER_PEER_HOSTED`, and `PEER_TO_PEER_FULL_MESH` — and a complete client-side host
+implementation (`PVZClientOnlinePeerHostedGameManager`, `PVZServerConnection`, `PVZServerAuth`,
+and `GameModeUtil::getIsServerHosted/getIsPeerHosted/getIsLocalHosted`). The hosting mode is a
+per-game-mode property read from Frostbite config and the Blaze GameManager allocation response,
+not a hard-coded "always EA dedicated." So the console binary *can* host a session; whether the
+retail playlists will let it (rather than demanding an EA data-centre) is decided by the server
+side we would control, and is the open §5 question — now with evidence that the client half is
+present. This is the same "server code shipped inside the client" the PC projects re-enable.
+
+**B. The real console-side blocker is TLS trust, and it is new.** The game does all networking
+over EA's DirtySDK (`ProtoSSL*`, `DirtyCert*`, `ProtoHttp*`) and links **no** `nn::ssl`. DirtyCert
+validates certificates against its **own embedded CA list**, independent of the Nintendo system
+certificate store. OpenPak's standard console-side trust mechanism — the OpenPak CA in the system
+store — therefore does **not** reach this title, and a DNS redirect alone is not enough to MITM it.
+There is a plausible no-patch avenue: DirtySDK can run its redirector over HTTP and loads the CA
+list for the secure leg from the redirector response, which (if the Switch build does this) lets
+OpenPak hand the client its own CA without a game patch. Whether it does is the first thing a
+capture must settle — see [`evidence-needed.md`](evidence-needed.md).
+
+**C. The server-admission token is EA-side, not Nintendo-side.** The token the game host
+validates to admit a player is minted by the game's own backend component, not by Nintendo. On
+OpenPak that component is ours to serve, so §5's "Nintendo-token" lead resolves in our favour:
+the admission token is server-controlled, not something we would forge.
+
+**What this changes.** The account, sign-in, profile/progression and store layers are all
+enumerable and buildable (the whole economy backend is a single custom Blaze component), *once a
+capture confirms the TLS boundary can be crossed console-side without a patch*. A fully playable
+match still needs a Frostbite game session, and the only no-patch route to one is to drive the
+client's own peer-hosted path from our GameManager — unproven for this title. The honest status
+stays "not fully feasible today," but the reason is now a capture-decidable TLS question plus an
+open match-hosting question, not an unobtainable server binary.
+
+The detailed client-RE findings, the full backend command surface and a staged milestone plan
+are recorded in the private research notes for this title.

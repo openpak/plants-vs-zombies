@@ -49,17 +49,36 @@ to compare against are **42127** (redirector) and **10041** (Blaze), both TCP/TL
 **Kill condition:** if no EA host is contacted and the title instead reaches a Nintendo service,
 the whole premise of this repository is wrong and the design must be rewritten.
 
-## Step 2 — Does the console pin a certificate?
+## Step 2 — How does the DirtySDK TLS trust work, and can we cross it without a game patch?
 
-**Answers:** whether a DNS redirect is enough, or whether a MITM also needs a CA trust patch
-(hardware) / a trusted stub cert (emulator).
+> **Sharpened 2026-10-24 by client RE.** The binary confirms EA's DirtySDK (`ProtoSSL*`,
+> `DirtyCert*`, `ProtoHttp*`) and links **no** `nn::ssl`. That is decisive: DirtyCert validates
+> server certificates against its **own embedded CA list** (baked `GOS 2013`/`GOS 2015`
+> Certificate Authority plus DigiCert/VeriSign roots), **not** the Nintendo system certificate
+> store. OpenPak's usual trick — the OpenPak CA in the system store — therefore does **not**
+> reach this title. A DNS redirect alone will not MITM it. This step is now the gate.
 
-Redirect the Step 1 hostname to a local TLS stub that presents a self-signed certificate for the
-Step 1 hostname and logs the ClientHello. Record: SNI, offered cipher suites, ALPN, and whether
-the console proceeds or sends an alert. A `ProtoHttp %d.%d/DS %d.%d.%d.%d` User-Agent in any
-cleartext HTTP would confirm EA's DirtySock stack and pin the SDK version.
+**Answers:** whether OpenPak can present trusted TLS to the client with console-side changes only
+(no game patch), or whether the title is blocked at the TLS boundary.
 
-**Kill condition:** none — this only sets the difficulty of every later capture.
+Two things to establish, cheapest first:
+
+1. **Is the redirector HTTP or HTTPS?** The binary carries both `getServerInstance` and
+   `getServerInstanceHttp` plus `redirector/getServerInstance` and an `http://%s:%d/%s` template.
+   If the Switch build dials the redirector over plain HTTP, OpenPak answers it with no cert at all.
+2. **Does the client load its Blaze-leg CA list from the redirector?** The binary has
+   `Blaze::Redirector::CACertificateRequest/Response`, `findCACertificates`, `getCACertificates`,
+   `cacertificate.certificatelist`, feeding `ProtoSSLSetCACert`. If the redirector supplies the CA
+   list the client then trusts for the secure Blaze connection, OpenPak serves **its own** CA there
+   and MITMs the Blaze leg with no patch and without the system store.
+
+Redirect the Step 1 hostname to a local stub and log the ClientHello (SNI, ciphers, ALPN) and the
+redirector request/response. Record whether DirtyCert accepts our CA for the Blaze leg, and watch
+for a `ProtoHttp %d.%d/DS %d.%d.%d.%d` User-Agent to pin the DirtySDK version.
+
+**Kill condition:** if the redirector is hard-HTTPS pinned to a `GOS` CA with no redirector-CA
+override path, then even sign-in is unreachable console-side without a game patch — report that as
+the blocker and stop. Game patches are forbidden; see the project rules.
 
 ## Step 3 — THE DECIDER: does any mode produce a console-hosted session?
 

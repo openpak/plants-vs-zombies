@@ -5,26 +5,33 @@ Neighborville — Complete Edition** on Nintendo Switch (EA / PopCap, 19 March 2
 That is the only Plants vs. Zombies title on the platform — neither Garden Warfare game was
 ever released for Switch.
 
-## Status: documentation only. Verdict is "not feasible now."
+## Status: documentation only. Not fully feasible today; the blocker is capture-gated.
 
-There is no code here and there will not be until the verdict changes. This is not a
-placeholder for a server; it is the record of why a server would not help.
+There is no code here and there will not be until a capture settles the open question below.
+This is the record of what the game needs and where it is blocked.
 
-BfN's online modes all run on **EA-hosted authoritative dedicated servers**, allocated over
-EA's Blaze backend. There is no server browser, no LAN mode and no peer-hosted fallback on
-console. A complete Blaze re-implementation would authenticate the console, take it to the
-lobby, and then have no game session to hand it.
+BfN runs on EA's **Blaze** backend. Its account, sign-in, profile, progression and store layers
+are a single custom Blaze component we could serve. A **2026-10-24 read of the game client**
+(docs/design.md §7) refines the earlier "no peer-hosted fallback on console" verdict: the Switch
+binary actually carries **all three network topologies** (dedicated, peer-hosted, peer-to-peer)
+and a complete client-side host — so the console *can* host, and which topology a mode uses is
+decided by the Blaze server we would control.
 
-The three open-source private-server projects for this game
+The real console-side blocker is **TLS trust**. The game does all networking over EA's DirtySDK
+and links **no** `nn::ssl`, so it validates certificates against DirtySDK's **own embedded CA
+list**, independent of the Nintendo system store. OpenPak's usual console-side trust mechanism
+(the OpenPak CA in the system store) does **not** reach this title, so a DNS redirect alone will
+not MITM it. Whether there is a no-patch way across that boundary (DirtySDK can run its redirector
+over HTTP and load the Blaze-leg CA from the redirector response) is the first thing a capture
+must answer — see [`docs/evidence-needed.md`](docs/evidence-needed.md). Game patches are forbidden.
+
+The three open-source private-server projects
 ([GardenGate](https://github.com/nocss42/GardenGate),
 [Cypress](https://github.com/PvZ-Cypress/Cypress),
-[Z7](https://github.com/Khysnik/Z7)) all get around that by **injecting a DLL into the Windows
-game client** to enable the server code shipped inside it. They are Windows binary-patching
-projects, PC-only, with per-build Frostbite offsets. Nothing in them ports to a Switch, and
-OpenPak's console onboarding redirects and decrypts traffic rather than modifying games.
-
-So the blocker is not a protocol we have not written yet. It is a game server we cannot obtain
-for this build.
+[Z7](https://github.com/Khysnik/Z7)) re-enable the client's own host code by **injecting a DLL
+into the Windows client** — PC-only, per-build offsets, nothing that ports to a Switch, and the
+wrong shape for OpenPak (which changes the console, not the game). They are cited as prior art
+only; none was read for code.
 
 Full reasoning and sources: [`docs/design.md`](docs/design.md).
 What would overturn it, and how to find out: [`docs/evidence-needed.md`](docs/evidence-needed.md).
