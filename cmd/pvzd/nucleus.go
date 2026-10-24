@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -80,7 +81,20 @@ func findJWT(vals url.Values, r *http.Request) string {
 
 // accountFromIDToken resolves a console token to this game's account, creating it on first use.
 func (s *server) accountFromIDToken(tok string) (*account, bool, error) {
-	p, err := s.ids.byIDToken(tok)
+	// A Nintendo Account id_token first (what the title gets from the console), then a BAAS one.
+	p, err := s.ids.byNAIDToken(tok)
+	if errors.Is(err, errTokenRejected) {
+		p, err = s.ids.byIDToken(tok)
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return s.store.get(p.BaasUserID, p.PID, p.Nickname)
+}
+
+// accountFromNACode resolves the Nintendo Account authorization code (nx_code) to an account.
+func (s *server) accountFromNACode(code string) (*account, bool, error) {
+	p, err := s.ids.byNACode(code)
 	if err != nil {
 		return nil, false, err
 	}
@@ -109,13 +123,20 @@ func (s *server) nucleus(w http.ResponseWriter, r *http.Request, host string, bo
 	log.Printf("nucleus %s %s%s params=%v", r.Method, host, r.URL.Path, keys)
 	switch r.URL.Path {
 	case "/connect/auth":
-		tok := findJWT(vals, r)
-		if tok == "" {
-			log.Printf("nucleus connect/auth: no console token in %v", keys)
+		var (
+			a     *account
+			first bool
+			err   error
+		)
+		if nx := vals.Get("nx_code"); nx != "" {
+			a, first, err = s.accountFromNACode(nx)
+		} else if tok := findJWT(vals, r); tok != "" {
+			a, first, err = s.accountFromIDToken(tok)
+		} else {
+			log.Printf("nucleus connect/auth: no console proof in %v", keys)
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid_request"})
 			return
 		}
-		a, first, err := s.accountFromIDToken(tok)
 		if err != nil {
 			log.Printf("nucleus connect/auth: identity: %v", err)
 			writeJSON(w, http.StatusUnauthorized, map[string]any{"error": "login_required"})

@@ -30,7 +30,25 @@ type identityClient struct{ url, key string }
 func newIdentityClient(url, key string) identityClient { return identityClient{url: url, key: key} }
 
 func (c identityClient) byIDToken(tok string) (*player, error) {
-	body, _ := json.Marshal(map[string]any{"id_token": tok})
+	return c.resolve(map[string]any{"id_token": tok})
+}
+
+// naTitleClientID is the Nintendo Account client the console's silent authorize issues the
+// title's codes to: the title id, as the aauth answer names it.
+const naTitleClientID = "0100c56010fd8000"
+
+// byNACode spends the Nintendo Account authorization code the game hands Nucleus as nx_code.
+func (c identityClient) byNACode(code string) (*player, error) {
+	return c.resolve(map[string]any{"na_code": code, "client_id": naTitleClientID})
+}
+
+// byNAIDToken proves the Nintendo Account id_token the game can hand Nucleus.
+func (c identityClient) byNAIDToken(tok string) (*player, error) {
+	return c.resolve(map[string]any{"na_id_token": tok})
+}
+
+func (c identityClient) resolve(in map[string]any) (*player, error) {
+	body, _ := json.Marshal(in)
 	req, err := http.NewRequest(http.MethodPost, c.url+"/internal/switch/identity", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
