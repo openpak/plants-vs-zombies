@@ -5,25 +5,29 @@ Neighborville — Complete Edition** on Nintendo Switch (EA / PopCap, 19 March 2
 That is the only Plants vs. Zombies title on the platform — neither Garden Warfare game was
 ever released for Switch.
 
-## Status: documentation only. Not fully feasible today; the blocker is capture-gated.
-
-There is no code here and there will not be until a capture settles the open question below.
-This is the record of what the game needs and where it is blocked.
+## Status: CA patch done (owner-approved exception); redirector and sign-in next.
 
 BfN runs on EA's **Blaze** backend. Its account, sign-in, profile, progression and store layers
-are a single custom Blaze component we could serve. A **2026-10-24 read of the game client**
+are a single custom Blaze component we can serve. A **2026-10-24 read of the game client**
 (docs/design.md §7) refines the earlier "no peer-hosted fallback on console" verdict: the Switch
 binary actually carries **all three network topologies** (dedicated, peer-hosted, peer-to-peer)
 and a complete client-side host — so the console *can* host, and which topology a mode uses is
 decided by the Blaze server we would control.
 
-The real console-side blocker is **TLS trust**. The game does all networking over EA's DirtySDK
-and links **no** `nn::ssl`, so it validates certificates against DirtySDK's **own embedded CA
-list**, independent of the Nintendo system store. OpenPak's usual console-side trust mechanism
-(the OpenPak CA in the system store) does **not** reach this title, so a DNS redirect alone will
-not MITM it. Whether there is a no-patch way across that boundary (DirtySDK can run its redirector
-over HTTP and load the Blaze-leg CA from the redirector response) is the first thing a capture
-must answer — see [`docs/evidence-needed.md`](docs/evidence-needed.md). Game patches are forbidden.
+The console-side blocker was **TLS trust**. The game does all networking over EA's DirtySDK and
+links **no** `nn::ssl`, so it validates certificates against DirtySDK's **own embedded CA list**,
+independent of the Nintendo system store, and its first EA call (the redirector) is TLS only. A
+capture on 2026-10-24 confirmed that no console-side change gets past it.
+
+### The PvZ exception to "no game patches"
+
+OpenPak does not patch games. This title is a documented exception, decided by the owner on
+2026-10-24, alongside the Crash Team Racing key swap and the Diablo II: Resurrected trust patch: a
+**data-only** IPS replaces one entry of the game's CA list (EA's "GOS 2015 Certificate Authority")
+with the OpenPak CA's name and public key. No instruction changes. It covers update v1.0.4 (build
+id `5AD255D6667B6EB5BDCF74B74BCD2602`) only and is no precedent for other titles. The generator,
+the file and the evidence are in [`tools/pvz-ca`](tools/pvz-ca/README.md); consoles get it from
+the OpenPak Switch Patcher and Harbor builds it in.
 
 The three open-source private-server projects
 ([GardenGate](https://github.com/nocss42/GardenGate),
@@ -38,8 +42,8 @@ What would overturn it, and how to find out: [`docs/evidence-needed.md`](docs/ev
 
 ## Consequences
 
-- **No port block claimed.** The 22600–22699 third-party-network range in
-  [`ports.md`](https://docs.openpak.org/contributors/ports/) stays free for a title that can use it.
+- **Port block pending.** The redirector and Blaze service ports are being claimed in
+  [`ports.md`](https://docs.openpak.org/contributors/ports/) with the first service code.
 - **No Go module.** `go.mod` was removed; an empty module only ever produced a failing
   `go test ./...`. It comes back with the first real package.
 - **One question decides everything.** If a capture ever shows the console hosting its own
