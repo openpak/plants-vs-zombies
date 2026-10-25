@@ -20,6 +20,20 @@ const (
 	tdfGetMarketplaceGrantsResponse = 0x6c680fc6
 )
 
+// generalSettings are the name/value overrides the game applies with SettingsManager::set right before
+// its mandated-version check (BlazeClientSettingsManager::applyMandatedVersionSettings compares
+// PVZOnlineSettings.MandatedVersion.Current with .Required, and rejects a higher Current when ExactMatch
+// is set). This server has no client builds to retire, so the check is switched off: Required and
+// Current both 0 and ExactMatch false.
+func generalSettings() []h.Value {
+	kv := func(k, v string) h.Value { return h.St(h.F("IDEN", h.S(k)), h.F("VALU", h.S(v))) }
+	return []h.Value{
+		kv("PVZOnline.MandatedVersion.Required", "0"),
+		kv("PVZOnline.MandatedVersion.Current", "0"),
+		kv("PVZOnline.MandatedVersion.ExactMatch", "false"),
+	}
+}
+
 func empty(s *session, _ h.Struct) (h.Struct, uint32) { return nil, 0 }
 
 func init() {
@@ -29,7 +43,7 @@ func init() {
 	on(compPvzGw, 0x71, pvzUpdateInstalledLicenses)
 	on(compPvzGw, 0x11, func(s *session, _ h.Struct) (h.Struct, uint32) { // getClientSettings
 		return h.Struct{
-			h.F("GENS", h.List(h.TStruct)),
+			h.F("GENS", h.List(h.TStruct, generalSettings()...)),
 			h.F("PACF", h.St(h.F("LCUV", h.S("")), h.F("PRSF", h.S("")), h.F("PSTA", h.I(0)), h.F("PURL", h.S("")))),
 		}, 0
 	})
