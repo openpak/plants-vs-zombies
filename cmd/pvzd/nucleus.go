@@ -149,8 +149,22 @@ func (s *server) nucleus(w http.ResponseWriter, r *http.Request, host string, bo
 			first bool
 			err   error
 		)
-		if nx := vals.Get("nx_code"); nx != "" {
+		nx := vals.Get("nx_code")
+		if nx == "" {
+			nx = r.Header.Get("Nx_code") // the console game sends it as a header
+		}
+		if nx != "" {
 			a, first, err = s.accountFromNACode(nx)
+			if err != nil {
+				// a code is single use; fall back to the NA id_token the game sends along (Nsatoken)
+				log.Printf("nucleus connect/auth: nx_code: %v", err)
+				if tok := findJWT(vals, r); tok != "" {
+					a, first, err = s.accountFromIDToken(tok)
+				}
+			}
+		} else if at := r.Header.Get("Access_token"); at != "" && takeGrant(tokens, at, false) != nil {
+			// the Blaze-side connect/auth presents the access token the first one produced
+			a = takeGrant(tokens, at, false)
 		} else if tok := findJWT(vals, r); tok != "" {
 			a, first, err = s.accountFromIDToken(tok)
 		} else if c, cerr := r.Cookie("sid"); cerr == nil && sessions[c.Value] != nil {
@@ -202,6 +216,8 @@ func (s *server) nucleus(w http.ResponseWriter, r *http.Request, host string, bo
 			"access_token": at, "token_type": "Bearer", "expires_in": 14400,
 			"refresh_token": newToken("UlQx"), "id_token": "",
 		})
+	case "/connect/invalidate":
+		w.WriteHeader(http.StatusOK)
 	case "/connect/tokeninfo":
 		at := vals.Get("access_token")
 		if at == "" {
