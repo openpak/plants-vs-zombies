@@ -82,6 +82,10 @@ func main() {
 	tcfg := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		MinVersion:   tls.VersionTLS12,
+		GetConfigForClient: func(h *tls.ClientHelloInfo) (*tls.Config, error) {
+			log.Printf("tls hello sni=%q from %s versions=%v", h.ServerName, h.Conn.RemoteAddr(), h.SupportedVersions)
+			return nil, nil
+		},
 		// The client offers ECDHE-RSA AES-GCM/ChaCha20 and plain RSA suites; Go's defaults cover them.
 	}
 	httpHandler := srv.httpMux()
