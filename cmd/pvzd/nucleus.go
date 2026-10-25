@@ -101,6 +101,27 @@ func (s *server) accountFromNACode(code string) (*account, bool, error) {
 	return s.store.get(p.BaasUserID, p.PID, p.Nickname)
 }
 
+// redactedHeaders lists the request headers with long values (tokens) cut to their first ten bytes.
+func redactedHeaders(r *http.Request) string {
+	var b strings.Builder
+	for k, vs := range r.Header {
+		for _, v := range vs {
+			if len(v) > 24 {
+				v = v[:10] + "..."
+			}
+			b.WriteString(k + "=" + v + " ")
+		}
+	}
+	return b.String()
+}
+
+// sessions: the SSO cookie Nucleus sets after a console proof, so a later connect/auth from the
+// same client (the Blaze-side one, a different client_id) needs no proof of its own.
+var (
+	sessMu   sync.Mutex
+	sessions = map[string]*account{}
+)
+
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -120,7 +141,7 @@ func (s *server) nucleus(w http.ResponseWriter, r *http.Request, host string, bo
 	for k := range vals {
 		keys = append(keys, k)
 	}
-	log.Printf("nucleus %s %s%s params=%v", r.Method, host, r.URL.Path, keys)
+	log.Printf("nucleus %s %s%s params=%v headers=%s", r.Method, host, r.URL.Path, keys, redactedHeaders(r))
 	switch r.URL.Path {
 	case "/connect/auth":
 		var (
@@ -132,6 +153,10 @@ func (s *server) nucleus(w http.ResponseWriter, r *http.Request, host string, bo
 			a, first, err = s.accountFromNACode(nx)
 		} else if tok := findJWT(vals, r); tok != "" {
 			a, first, err = s.accountFromIDToken(tok)
+		} else if c, cerr := r.Cookie("sid"); cerr == nil && sessions[c.Value] != nil {
+			sessMu.Lock()
+			a = sessions[c.Value]
+			sessMu.Unlock()
 		} else {
 			log.Printf("nucleus connect/auth: no console proof in %v", keys)
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid_request"})
@@ -144,6 +169,11 @@ func (s *server) nucleus(w http.ResponseWriter, r *http.Request, host string, bo
 		}
 		code := newToken("QUOx")
 		putGrant(codes, code, a, 10*time.Minute)
+		sid := newToken("SID")
+		sessMu.Lock()
+		sessions[sid] = a
+		sessMu.Unlock()
+		http.SetCookie(w, &http.Cookie{Name: "sid", Value: sid, Path: "/", HttpOnly: true})
 		log.Printf("nucleus connect/auth: code for blaze %d (%s), first=%v", a.BlazeID, a.Name, first)
 		if ru := vals.Get("redirect_uri"); ru != "" && vals.Get("response_type") != "" {
 			sep := "?"
