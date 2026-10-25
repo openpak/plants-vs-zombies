@@ -28,6 +28,9 @@ func (s *server) httpMux() http.Handler {
 			s.redirector(w, r, body)
 		case strings.HasPrefix(host, "accounts.") || strings.HasPrefix(host, "signin.") || strings.HasPrefix(host, "gateway."):
 			s.nucleus(w, r, host, body)
+		case strings.HasSuffix(host, ".data.ea.com"):
+			// telemetry (bugsentry sessions, PIN events): accepted and dropped
+			w.WriteHeader(http.StatusOK)
 		default:
 			log.Printf("http unhandled %s %s%s headers=%v body=%q", r.Method, host, r.URL.RequestURI(), r.Header, clip(body, 2000))
 			http.NotFound(w, r)
