@@ -24,10 +24,10 @@ No build or run command is recorded in the old README. Container build and ports
 
 - [Protocol](docs/protocol.md)
 - [Deploy](docs/deploy.md)
-- [Notes](docs/notes.md)
 - [Design](docs/design.md)
 - [Evidence needed](docs/evidence-needed.md)
-- [Provenance](docs/provenance.md)
+
+PRDs: openpak/prds (private)
 
 Live compatibility status: [openpak.org/titles#t-23](https://openpak.org/titles#t-23).
 
