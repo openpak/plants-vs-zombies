@@ -23,7 +23,6 @@ No build or run command is recorded in the old README. Container build and ports
 ## Docs
 
 - [Protocol](docs/protocol.md)
-- [Evidence](docs/evidence.md)
 - [Deploy](docs/deploy.md)
 - [Notes](docs/notes.md)
 - [Design](docs/design.md)

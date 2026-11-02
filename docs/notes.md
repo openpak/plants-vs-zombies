@@ -5,7 +5,7 @@ Neighborville — Complete Edition** on Nintendo Switch (EA / PopCap, 19 March 2
 That is the only Plants vs. Zombies title on the platform — neither Garden Warfare game was
 ever released for Switch.
 
-## Status: CA patch done (owner-approved exception); redirector and sign-in next.
+## Backend and console-side trust
 
 BfN runs on EA's **Blaze** backend. Its account, sign-in, profile, progression and store layers
 are a single custom Blaze component we can serve. A **2026-10-24 read of the game client**
@@ -42,8 +42,6 @@ What would overturn it, and how to find out: [`evidence-needed.md`](evidence-nee
 
 ## Consequences
 
-- **Port block pending.** The redirector and Blaze service ports are being claimed in
-  [`ports.md`](https://docs.openpak.org/contributors/ports/) with the first service code.
 - **No Go module.** `go.mod` was removed; an empty module only ever produced a failing
   `go test ./...`. It comes back with the first real package.
 - **One question decides everything.** If a capture ever shows the console hosting its own

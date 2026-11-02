@@ -1,7 +1,6 @@
 # Design: Plants vs. Zombies on Nintendo Switch
 
-Status: **research only. Verdict is "not feasible now."** No code, no port block.
-Written 2026-09-09 against public sources only, under
+Written against public sources only, under
 [clean-room policy](https://docs.openpak.org/contributors/clean-room/). No source from a non-free implementation
 was opened for this document.
 
