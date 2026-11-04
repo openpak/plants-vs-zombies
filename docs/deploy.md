@@ -10,7 +10,8 @@ a `gcr.io/distroless/static` image that runs as `nonroot:nonroot`. Build flags: 
 | --- | --- |
 | Entrypoint | `/pvzd` |
 | Exposed ports | `42230`, `44325` (TLS, game-fixed), `23540` (`/health`), `23541` (plain HTTP for hosts Traefik terminates) |
-| Volume | `/data` |
+| Volume | `/data` (only a leftover `accounts.json` is read from it, once, and renamed `accounts.json.imported-20261104`) |
+| `PVZ_DATABASE_URL` | required: Postgres for accounts (table `pvz_accounts`, pool of 3) |
 | Environment variables | none declared in the Dockerfile |
 | Image name | not recorded in this repository |
 

@@ -15,6 +15,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"errors"
 	"log"
@@ -69,7 +70,7 @@ func loadConfig() config {
 
 func main() {
 	cfg := loadConfig()
-	st, err := openStore(cfg.dataDir)
+	st, err := openStore(context.Background(), os.Getenv("PVZ_DATABASE_URL"), cfg.dataDir)
 	if err != nil {
 		log.Fatalf("store: %v", err)
 	}

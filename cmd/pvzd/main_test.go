@@ -32,10 +32,7 @@ func testCert(t *testing.T) tls.Certificate {
 }
 
 func startTest(t *testing.T) (*server, string) {
-	st, err := openStore(t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := &store{back: newMemBackend()}
 	s := &server{cfg: config{blazeHost: "spring18.gosredirector.ea.com", blazeIP: "10.0.0.1", blazePort: 42230}, store: st}
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
