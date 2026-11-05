@@ -35,7 +35,7 @@ func TestAccountsSurviveRestartAndImport(t *testing.T) {
 	os.Rename(legacy+".imported-20261104", legacy)
 	a = open()
 	old, first, err := a.get("pt-old", 7, "")
-	if err != nil || first || old.BlazeID != 1000000041 || old.Name != "Old" || old.Data["bytevault"] != "QQ==" {
+	if err != nil || first || old.BlazeID != 1000000041 || old.Name != "Player41" || old.Data["bytevault"] != "QQ==" {
 		t.Fatalf("imported account: %+v first=%v err=%v", old, first, err)
 	}
 	n, first, err := a.get("pt-new", 9, "New")
@@ -47,7 +47,7 @@ func TestAccountsSurviveRestartAndImport(t *testing.T) {
 	}
 	b := open() // a restart
 	again, first, err := b.get("pt-new", 9, "")
-	if err != nil || first || again.BlazeID != n.BlazeID || again.Name != "New" || again.Data["bytevault"] != "Qg==" {
+	if err != nil || first || again.BlazeID != n.BlazeID || again.Name != sessionName("", n.BlazeID) || again.Data["bytevault"] != "Qg==" {
 		t.Fatalf("after restart: %+v first=%v err=%v", again, first, err)
 	}
 	if got := b.byBlazeID(n.BlazeID); got == nil || got.BaasUserID != "pt-new" {

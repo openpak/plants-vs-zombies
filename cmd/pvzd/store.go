@@ -26,7 +26,9 @@ type account struct {
 	BaasUserID string            `json:"baas_user_id"`
 	PID        uint64            `json:"pid"`
 	BlazeID    int64             `json:"blaze_id"`
-	Name       string            `json:"name"`
+	// Name is the player's Switch nickname for this session only (what the identity service answered at login,
+	// "Player<n>" when it has none). It is never stored: the name lives in the account core (prds#131).
+	Name       string            `json:"-"`
 	Created    time.Time         `json:"created"`
 	LastLogin  time.Time         `json:"last_login"`
 	Data       map[string]string `json:"data,omitempty"` // per-game blobs (ByteVault, settings), by key
@@ -52,11 +54,11 @@ CREATE TABLE IF NOT EXISTS pvz_accounts (
 	baas_user_id text PRIMARY KEY,
 	pid          bigint NOT NULL,
 	blaze_id     bigint NOT NULL UNIQUE,
-	name         text NOT NULL,
 	created      timestamptz NOT NULL,
 	last_login   timestamptz NOT NULL,
 	data         jsonb NOT NULL DEFAULT '{}'
-)`
+);
+ALTER TABLE pvz_accounts DROP COLUMN IF EXISTS name`
 
 type pgBackend struct{ pool *pgxpool.Pool }
 
@@ -131,9 +133,9 @@ func (p *pgBackend) importFile(ctx context.Context, path string) (int, error) {
 		if a.Data == nil {
 			data = []byte("{}")
 		}
-		tag, err := tx.Exec(ctx, `INSERT INTO pvz_accounts (baas_user_id, pid, blaze_id, name, created, last_login, data)
-			VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb) ON CONFLICT DO NOTHING`,
-			id, int64(a.PID), a.BlazeID, a.Name, a.Created, a.LastLogin, string(data))
+		tag, err := tx.Exec(ctx, `INSERT INTO pvz_accounts (baas_user_id, pid, blaze_id, created, last_login, data)
+			VALUES ($1,$2,$3,$4,$5,$6::jsonb) ON CONFLICT DO NOTHING`,
+			id, int64(a.PID), a.BlazeID, a.Created, a.LastLogin, string(data))
 		if err != nil {
 			return 0, err
 		}
@@ -150,13 +152,13 @@ func (p *pgBackend) importFile(ctx context.Context, path string) (int, error) {
 	return n, os.Rename(path, path+".imported-20261104")
 }
 
-const cols = `baas_user_id, pid, blaze_id, name, created, last_login, data`
+const cols = `baas_user_id, pid, blaze_id, created, last_login, data`
 
 func scanAccount(row pgx.Row) (account, error) {
 	var a account
 	var pid int64
 	var data []byte
-	if err := row.Scan(&a.BaasUserID, &pid, &a.BlazeID, &a.Name, &a.Created, &a.LastLogin, &data); err != nil {
+	if err := row.Scan(&a.BaasUserID, &pid, &a.BlazeID, &a.Created, &a.LastLogin, &data); err != nil {
 		return a, err
 	}
 	a.PID = uint64(pid)
@@ -175,21 +177,30 @@ func (p *pgBackend) login(ctx context.Context, baasID string, pid uint64, name s
 	var data []byte
 	var first bool
 	err := p.pool.QueryRow(ctx, `WITH n AS (SELECT nextval('pvz_blaze_id') AS id)
-		INSERT INTO pvz_accounts (baas_user_id, pid, blaze_id, name, created, last_login)
-		SELECT $1, $2, n.id, COALESCE(NULLIF($3,''), 'Player' || (n.id % 100000)), now(), now() FROM n
-		ON CONFLICT (baas_user_id) DO UPDATE SET pid = EXCLUDED.pid, last_login = now(),
-			name = CASE WHEN $3 <> '' THEN $3 ELSE pvz_accounts.name END
-		RETURNING `+cols+`, (xmax = 0)`, baasID, int64(pid), name).
-		Scan(&a.BaasUserID, &pidv, &a.BlazeID, &a.Name, &a.Created, &a.LastLogin, &data, &first)
+		INSERT INTO pvz_accounts (baas_user_id, pid, blaze_id, created, last_login)
+		SELECT $1, $2, n.id, now(), now() FROM n
+		ON CONFLICT (baas_user_id) DO UPDATE SET pid = EXCLUDED.pid, last_login = now()
+		RETURNING `+cols+`, (xmax = 0)`, baasID, int64(pid)).
+		Scan(&a.BaasUserID, &pidv, &a.BlazeID, &a.Created, &a.LastLogin, &data, &first)
 	if err != nil {
 		return a, false, err
 	}
+	a.Name = sessionName(name, a.BlazeID)
 	a.PID = uint64(pidv)
 	_ = json.Unmarshal(data, &a.Data)
 	if len(a.Data) == 0 {
 		a.Data = nil
 	}
 	return a, first, nil
+}
+
+// sessionName is the name shown for one session: the nickname the identity service gave, else a stable
+// placeholder derived from the persona id. Nothing here is stored.
+func sessionName(nick string, blazeID int64) string {
+	if nick != "" {
+		return nick
+	}
+	return "Player" + itoa(blazeID%100000)
 }
 
 func (p *pgBackend) saveData(ctx context.Context, baasID string, data map[string]string) error {
