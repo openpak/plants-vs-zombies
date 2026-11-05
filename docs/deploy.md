@@ -15,4 +15,8 @@ a `gcr.io/distroless/static` image that runs as `nonroot:nonroot`. Build flags: 
 | Environment variables | none declared in the Dockerfile |
 | Image name | not recorded in this repository |
 
+## Account erasure
+
+`DELETE /internal/accounts/{account_id}/data` on the health listener (`http://openpak-plants-vs-zombies:23540`, container network only, not routed by Traefik), header `Authorization: Bearer <ACCOUNT_ERASE_KEY>`; key unset answers 503, bad id 400, wrong key 401. Needs `ACCOUNT_ERASE_KEY`, `ACCOUNT_GRPC_ADDR` and `ACCOUNT_INTERNAL_KEY` (read-only core link lookup, namespace `switch`). Answers `{"service":"plants-vs-zombies","rows":N}` and logs one `account erased` line. Erased: the `pvz_accounts` rows (name, ids, per-game blobs) whose `baas_user_id` or `pid` matches one of the account's Switch links. Idempotent.
+
 Nothing else about production deployment is recorded yet.

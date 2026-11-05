@@ -54,3 +54,23 @@ func (m *memBackend) byBlaze(_ context.Context, id int64) (*account, error) {
 	}
 	return nil, nil
 }
+
+func (m *memBackend) erase(_ context.Context, baas []string, pids []int64) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	n := 0
+	for id, a := range m.by {
+		hit := false
+		for _, b := range baas {
+			hit = hit || b == id
+		}
+		for _, p := range pids {
+			hit = hit || int64(a.PID) == p
+		}
+		if hit {
+			delete(m.by, id)
+			n++
+		}
+	}
+	return n, nil
+}

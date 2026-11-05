@@ -3,6 +3,10 @@
 Generated from git history on 2026-09-15. `git log` stays the source
 of truth; this file is the readable summary.
 
+## v0.2.2 — 2026-11-05
+
+- Account erasure (openpak/prds#120): `DELETE /internal/accounts/{account_id}/data` on the health listener removes the account's `pvz_accounts` rows, resolved through the account core's Switch links. Needs `ACCOUNT_ERASE_KEY`, `ACCOUNT_GRPC_ADDR`, `ACCOUNT_INTERNAL_KEY`. The health listener now logs every request.
+
 ## v0.2.1 — 2026-11-04
 
 - Release workflow: tags publish ghcr.io/openpak/<repo> for amd64 and arm64 (same as the sibling game servers). No code change.

@@ -10,7 +10,7 @@
 //     Fire2 session. The redirector hands out this same listener as the Blaze server.
 //   - PVZ_HTTP_ADDR (default ":23541"): plain HTTP for the hosts Traefik terminates
 //     (accounts.ea.com, gateway.ea.com, ...), routed by Host.
-//   - PVZ_HEALTH_ADDR (default ":23540"): /health.
+//   - PVZ_HEALTH_ADDR (default ":23540"): /health and the account-erase route (container network only).
 package main
 
 import (
@@ -75,7 +75,7 @@ func main() {
 		log.Fatalf("store: %v", err)
 	}
 	blazeHostForConfig, blazePortForConfig = cfg.blazeHost, strconv.Itoa(cfg.blazePort)
-	srv := &server{cfg: cfg, store: st, ids: newIdentityClient(cfg.nxURL, cfg.nxKey)}
+	srv := &server{cfg: cfg, store: st, ids: newIdentityClient(cfg.nxURL, cfg.nxKey), links: newLinksFromEnv()}
 	cert, err := tls.LoadX509KeyPair(cfg.certFile, cfg.keyFile)
 	if err != nil {
 		log.Fatalf("tls: %v", err)
@@ -105,7 +105,8 @@ func main() {
 	go func() {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok\n")) })
-		log.Fatal(http.ListenAndServe(cfg.healthAddr, mux))
+		mux.HandleFunc("/internal/accounts/", eraseHandler("plants-vs-zombies", srv.erase))
+		log.Fatal(http.ListenAndServe(cfg.healthAddr, logRequests(mux)))
 	}()
 	log.Printf("http listener %s", cfg.httpAddr)
 	log.Fatal((&http.Server{Addr: cfg.httpAddr, Handler: httpHandler, ReadHeaderTimeout: 10 * time.Second}).ListenAndServe())
@@ -115,6 +116,7 @@ type server struct {
 	cfg   config
 	store *store
 	ids   identityClient
+	links switchLinks
 	mu    sync.Mutex
 	conns int
 }

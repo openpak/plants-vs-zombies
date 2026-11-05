@@ -38,6 +38,8 @@ type backend interface {
 	login(ctx context.Context, baasID string, pid uint64, name string) (a account, first bool, err error)
 	saveData(ctx context.Context, baasID string, data map[string]string) error
 	byBlaze(ctx context.Context, id int64) (*account, error)
+	// erase deletes the accounts keyed by these BAAS ids or carrying these PIDs (card openpak/prds#120).
+	erase(ctx context.Context, baas []string, pids []int64) (int, error)
 }
 
 type store struct {
